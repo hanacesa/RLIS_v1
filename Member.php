@@ -12,11 +12,11 @@ class Member extends Model
     use HasFactory;
     use SoftDeletes;
 
-    public function books()
-{
-    return $this->hasMany(Book::class);
+    //public function books()
+//{
+    //return $this->hasMany(Book::class);
     
-}
+//}
     public function borrows()
     {
         return $this->hasMany(Borrow::class);

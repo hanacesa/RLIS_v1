@@ -10,11 +10,11 @@ class Book extends Model
 {
     use HasFactory;
     use SoftDeletes;
-    public function member()
-    {
-        return $this->belongsTo(member::class);
-    }
-    public function borrows()
+    //public function member()
+    //{
+        //return $this->belongsTo(member::class);
+    //}
+    public function borrow()
     {
         return $this->hasMany(Borrow::class);
     }
