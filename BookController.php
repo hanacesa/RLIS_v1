@@ -15,11 +15,11 @@ class BookController extends Controller
     public function index(Request $request)
     {
         // Assuming you get member_id from the request
-    $member_id = $request->query('member_id');
+    
     
     // Fetch all books
     $books = Book::all();
-    
+    $member_id = $request->query('member_id', null);
     // Pass member_id and books to the view
     return view('book.index', compact('books', 'member_id'));
     }
