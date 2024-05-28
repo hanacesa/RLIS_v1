@@ -3,8 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Pagination\Paginator;
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\ServiceProvider;
 use App\Models\User; // Import the correct User class
 
 class AppServiceProvider extends ServiceProvider
@@ -17,23 +17,21 @@ class AppServiceProvider extends ServiceProvider
         //
     }
 
-    protected $policies=[];
-
     /**
      * Bootstrap any application services.
      */
     public function boot(): void
     {
-        Gate::policy(User::class, 'registerPolicies');
+        // Registering policies if needed
+        // Gate::policy(User::class, UserPolicy::class);
 
-        Gate::define('isAdmin',function(User $user) {
-           return $user->userLevel==0;
+        // Defining Gates
+        Gate::define('isAdmin', function ($user) {
+            return $user->Role === 'Admin';
         });
 
-        Gate::define('isAdmin', function (User $user) {
-            return $user->id === 1; // Assuming admin ID is 1
-        });
-        
+       
+
         Paginator::useBootstrap();
     }
 }
