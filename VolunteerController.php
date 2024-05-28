@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Volunteer;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 class VolunteerController extends Controller
 {
@@ -30,16 +33,31 @@ class VolunteerController extends Controller
      */
     public function store(Request $request)
     {
-        // Create a new Volunteer instance and assign values
-$newVolunteer = new Volunteer;
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:volunteers|unique:users',
+            'dob' => 'required|date',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
 
-$newVolunteer->name = $request->name;
-$newVolunteer->email = $request->email;
-$newVolunteer->dob = $request->dob;
-$newVolunteer->save();
+        DB::transaction(function () use ($request) {
+            $volunteer = Volunteer::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'dob' => $request->dob,
+                'password' => Hash::make($request->password), // Hash the password
+            ]);
 
-// If saving was successful, redirect to student index page with success message
-return redirect()->route('volunteer.index')->with('success', 'New volunteer record added successfully!');
+            User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'role' => 'volunteer',
+                'volunteer_id' => $volunteer->id,
+            ]);
+        });
+
+        return redirect()->route('volunteer.index')->with('success', 'Volunteer created successfully');
     }
 
     /**
@@ -64,16 +82,39 @@ return redirect()->route('volunteer.index')->with('success', 'New volunteer reco
      */
     public function update(Request $request, Volunteer $volunteer)
     {
-        // Update the name field separately
-    $volunteer->name = $request->input('name');
-    $volunteer->email = $request->input('email');
-    $volunteer->dob = $request->input('dob');
-    $volunteer->update();
-
-    // Redirect back with success message
-    //return redirect()->back()->withSuccess('Book record updated successfully.');
-
-    return redirect()->route('volunteer.index')->with('success', 'Volunteer record updated successfully.');
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:volunteers,email,' . $volunteer->id . '|unique:users,email,' . $volunteer->user->id,
+            'dob' => 'required|date',
+            'password' => 'nullable|string|min:8|confirmed',
+        ]);
+    
+        DB::transaction(function () use ($request, $volunteer) {
+            // Update volunteer fields
+            $volunteer->update($request->only(['name', 'email', 'dob']));
+    
+            // Check if the volunteer has a related user
+            if ($volunteer->user) {
+                $user = $volunteer->user;
+    
+                // Update user fields
+                $userData = [
+                    'name' => $request->input('name'),
+                    'email' => $request->input('email'),
+                    'volunteer_id' => $volunteer->id,
+                ];
+    
+                // Update password if provided and not empty
+                if ($request->filled('password')) {
+                    $userData['password'] = Hash::make($request->input('password'));
+                }
+    
+                // Update the user with the new data
+                $user->update($userData);
+            }
+        });
+    
+        return redirect()->route('volunteer.index')->with('success', 'Volunteer record updated successfully.');
     }
 
     /**

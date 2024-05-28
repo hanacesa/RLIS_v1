@@ -9,81 +9,126 @@ use Illuminate\Http\Request;
 
 class BorrowController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        $members = Member::all();
-    $books = Book::all();
-    $borrows = Borrow::paginate(10); // Using pagination as per your example
-
-    // Pass the $borrows and $books variables to the view
-    return view('borrow.index', compact('borrows', 'books', 'members'));
+        $query = Borrow::query();
+        if ($request->has('book_id') && $request->book_id) {
+            $query->where('book_id', $request->book_id);
+        }
+    
+        if ($request->has('ic') && $request->ic) {
+            $query->whereHas('member', function ($q) use ($request) {
+                $q->where('ic', $request->ic);
+            });
+        }
+        $borrows = $query->get();
 
     
+
+        $borrows = Borrow::with(['member', 'book'])->get();
+        return view('borrow.index', compact('borrows'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create($member_id, $book_id)
     {
-        // Return a view to confirm the borrowing process or handle directly
-        return view('borrow.create', compact('member_id', 'book_id'));
+        $member = Member::findOrFail($member_id);
+        $book = Book::findOrFail($book_id);
+        return view('borrow.create', compact('member_id', 'book_id', 'member', 'book'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         // Validate the request
-        $request->validate([
+        $validated = $request->validate([
+            'member_id' => 'required|exists:members,id',
+            'book_id' => 'required|exists:books,id',
+            'returndate' => 'nullable|date',
+        ]);
+
+        // Check if the book is already borrowed by the member
+        $existingBorrow = Borrow::where('member_id', $request->member_id)
+            ->where('book_id', $request->book_id)
+            ->whereNull('returndate')
+            ->first();
+
+        if ($existingBorrow) {
+            return redirect()->back()->with('error', 'The book is already borrowed by the member.');
+        }
+
+        Borrow::create([
+            'member_id' => $validated['member_id'],
+            'book_id' => $validated['book_id'],
+            'borrowdate' => now(),
+            'returndate' => null,
+        ]);
+
+        return redirect()->route('borrow.index')->with('success', 'Book borrowed successfully.');
+    }
+
+    public function borrowBook(Request $request)
+    {
+        $validated = $request->validate([
             'member_id' => 'required|exists:members,id',
             'book_id' => 'required|exists:books,id',
         ]);
 
+        // Check if the book is already borrowed by another member
+        $existingBorrow = Borrow::where('book_id', $validated['book_id'])
+            ->whereNull('returndate')
+            ->first();
+
+        if ($existingBorrow) {
+            return redirect()->back()->with('error', 'Book is already borrowed by another member.');
+        }
+
         // Create a new borrow record
-        $borrow = new Borrow;
-        $borrow->member_id = $request->member_id;
-        $borrow->book_id = $request->book_id;
-        $borrow->borrowdate = now(); // Add other necessary fields
-        $borrow->returndate = null;
+        Borrow::create([
+            'member_id' => $validated['member_id'],
+            'book_id' => $validated['book_id'],
+            'borrowdate' => now(),
+        ]);
+
+        return redirect()->route('borrow.index')->with('success', 'Book borrowed successfully.');
+    }
+
+    public function returnBook(Request $request)
+    {
+        $borrowId = $request->input('borrow_id');
+
+        // Find the borrow record
+        $borrow = Borrow::findOrFail($borrowId);
+
+        // Update the returndate
+        $borrow->returndate = now();
         $borrow->save();
 
-        return redirect()->route('borrow.index')->with('success', 'Book borrowed successfully');
+        return redirect()->back()->with('success', 'Book returned successfully.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Borrow $borrow)
+    public function showBooks(Request $request)
     {
-        //
+        $member_id = $request->query('member_id');
+        $books = Book::all();
+        return view('book.index', compact('books', 'member_id'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Borrow $borrow)
     {
-        //
+        return view('borrow.edit', compact('borrow'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Borrow $borrow)
     {
-        //
-    }
+        // Update the name field separately
+    $borrow->member_id = $request->input('member_id');
+    $borrow->book_id = $request->input('book_id');
+    $borrow->borrowdate = $request->input('borrowdate');
+    $borrow->returndate = $request->input('returndate');
+    $borrow->update();
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Borrow $borrow)
-    {
-        //
+    // Redirect back with success message
+    //return redirect()->back()->withSuccess('Book record updated successfully.');
+
+    return redirect()->route('borrow.index')->with('success', 'Borrow record updated successfully.');
     }
 }

@@ -62,4 +62,30 @@ class SupervisorController extends Controller
     {
         //
     }
+    public function addVolunteer(Request $request)
+    {
+        // Validate the incoming request data
+        $request->validate([
+            'name' => 'required|string',
+            'email' => 'required|email|unique:volunteers,email|unique:users,email',
+            'password' => 'required|string|min:8',
+        ]);
+
+        // Create a new volunteer record
+        $volunteer = Volunteer::create([
+            'name' => $request->name,
+            'email' => $request->email,
+        ]);
+
+        // Create a corresponding user record
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'volunteer_id' => $volunteer->id,
+            'role' => 'volunteer', // Assign the role as 'volunteer'
+        ]);
+
+        return redirect()->back()->with('success', 'Volunteer added successfully.');
+    }
 }
