@@ -29,6 +29,18 @@ Route::get('volunteer/{volunteer}/show', [App\Http\Controllers\VolunteerControll
 Route::get('/borrow/create/{member_id}/{book_id}', [BorrowController::class, 'create'])->name('borrow.create');
 Route::post('/borrow/store', [BorrowController::class, 'store'])->name('borrow.store');
 
+// routes/web.php
+
+Route::post('supervisor/add-volunteer', 'SupervisorController@addVolunteer')->name('supervisor.addVolunteer');
+Route::post('borrow/create/{member_id}/{book_id}', [BorrowController::class, 'create'])->name('borrow.create');
+
+
+Route::get('books', [BorrowController::class, 'showBooks'])->name('books.index');
+Route::get('borrow/create/{member_id}/{book_id}', [BorrowController::class, 'create'])->name('borrow.create');
+Route::post('borrow/book', [BorrowController::class, 'borrowBook'])->name('borrow.book');
+Route::get('borrow', [BorrowController::class, 'index'])->name('borrow.index');
+Route::post('borrow/return', [BorrowController::class, 'returnBook'])->name('borrow.return');
+
+
 
 //Route::get('book', 'BookController@index')->name('book.index');
-
