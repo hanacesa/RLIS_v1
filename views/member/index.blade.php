@@ -22,6 +22,19 @@
         <a href="{{ route('member.create') }}" class="btn btn-success me-md-2">Add new Member</a>
         <a href="{{ route('borrow.index') }}" class="btn btn-success me-md-2">Borrow Record</a>
     </div>
+
+    <!-- Search Form -->
+<form method="GET" action="{{ route('member.index') }}" class="my-3">
+        <div class="row">
+            <div class="col-md-8">
+                <input type="text" name="search" class="form-control" placeholder="Search by Member Name or IC" value="{{ request('search') }}">
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </div>
+    </form>
+
     <table class="table">
         <thead>
             <tr>

@@ -27,11 +27,8 @@
 <!-- Search Form -->
 <form method="GET" action="{{ route('borrow.index') }}" class="my-3">
         <div class="row">
-            <div class="col-md-4">
-                <input type="text" name="book_id" class="form-control" placeholder="Search by Book ID" value="{{ request('book_id') }}">
-            </div>
-            <div class="col-md-4">
-                <input type="text" name="ic" class="form-control" placeholder="Search by IC" value="{{ request('ic') }}">
+            <div class="col-md-8">
+                <input type="text" name="search" class="form-control" placeholder="Search by Book ID or IC" value="{{ request('search') }}">
             </div>
             <div class="col-md-4">
                 <button type="submit" class="btn btn-primary">Search</button>
@@ -45,6 +42,7 @@
             <tr>
                 <th>No.</th>
                 <th>Name</th>
+                <th>Book ID</th>
                 <th>Book Borrowed</th>
                 <th>Borrow Date</th>
                 <th>Return Date</th>
@@ -57,6 +55,7 @@
             <tr>
                 <td>{{ $i++ }}</td>
                 <td>{{ $borrow->member->name ?? 'The member has been deleted' }}</td>
+                <td>{{ $borrow->book_id }}</td>
                 <td>{{ $borrow->book->title ?? 'The book has been deleted' }}</td>
                 <td>{{ $borrow->borrowdate }}</td>
                 <td>{{ $borrow->returndate }}</td>
